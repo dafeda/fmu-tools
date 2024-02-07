@@ -61,10 +61,12 @@ class DesignMatrix:
 
         # Reading default values
         default_dict = inputdict["defaultvalues"]
-        self.set_defaultvalues(default_dict)
+        self.defaultvalues = default_dict
 
         max_reals = _find_max_realisations(inputdict)
 
+        print(inputdict)
+        
         # Reading or generating rms seed values
         if "seeds" in inputdict.keys():
             self.add_seeds(inputdict["seeds"], max_reals)
@@ -203,14 +205,6 @@ class DesignMatrix:
         )
         print(f"Designmatrix written to {filename}")
 
-    def set_defaultvalues(self, defaults):
-        """Add default values
-
-        Args:
-            defaults (OrderedDict): (key, value) is (parameter_name, value)
-        """
-        self.defaultvalues = defaults
-
     def add_seeds(self, seeds, max_reals):
         """Adding background as specified in dictionary.
         Either from external file or from distributions in background
@@ -220,6 +214,8 @@ class DesignMatrix:
             back_dict (OrderedDict): how to generate background values
             max_values (int): number of background values to generate
         """
+        print("**= ", max_reals)
+        print("** seeds: ", seeds)
         if seeds in [None, "None"]:
             self.seedvalues = None
             print("seeds is set to None in general_input")

@@ -42,6 +42,10 @@ def excel2dict_design(input_filename, sheetnames=None):
     generalinput.dropna(axis=0, how="all", inplace=True)
     generalinput.dropna(axis=1, how="all", inplace=True)
 
+    # The first column is the index, hence reset_index.
+    if generalinput.reset_index().empty:
+        raise ValueError(f"The sheet '{gen_input_sheet}' is empty.")
+    
     if str(generalinput[1]["designtype"]) == "onebyone":
         returndict = _excel2dict_onebyone(input_filename, sheetnames)
     else:
@@ -69,6 +73,7 @@ def _find_geninput_sheetname(input_filename):
     """Finding general input sheet, allowing for name
     variations."""
     xlsx = openpyxl.load_workbook(input_filename, read_only=True, keep_links=False)
+
     sheets = xlsx.sheetnames
     general_input_sheet = []
     for sheet in sheets:
@@ -139,6 +144,7 @@ def _find_onebyone_input_sheet(input_filename):
         string, name of a sheet in the excel file
     """
     xlsx = openpyxl.load_workbook(input_filename, read_only=True, keep_links=False)
+
     sheets = xlsx.sheetnames
 
     design_input_sheet = []
@@ -168,18 +174,11 @@ def _find_onebyone_input_sheet(input_filename):
 def _check_designinput(dsgn_input):
     """Checks for valid input in designinput sheet"""
 
-    # Check for duplicate sensnames
-    sensitivity_names = []
-    for row in dsgn_input.itertuples():
-        if _has_value(row.sensname):
-            if row.sensname in sensitivity_names:
-                raise ValueError(
-                    "sensname '{}' was found on more than one row in designinput "
-                    "sheet. Two sensitivities can not share the same sensname. "
-                    "Please correct this and rerun".format(row.sensname)
-                )
-            sensitivity_names.append(row.sensname)
-
+    # Dropping NaNs because empty rows in 'sensname' are allowed.
+    counts = dsgn_input["sensname"].dropna().value_counts(sort=False)
+    repeated = dsgn_input["sensname"].dropna().unique()[counts > 1]
+    if repeated:
+        raise ValueError(f"The 'sensname' column in the 'designinput' sheet must contain unique values. Repeated value(s) found: {repeated}")
 
 def _check_for_mixed_sensitivities(sens_name, sens_group):
     """Checks for valid input in designinput sheet. A sensitivity cannot contain
@@ -286,6 +285,17 @@ def _excel2dict_onebyone(input_filename, sheetnames=None):
     inputdict["sensitivities"] = OrderedDict()
     designinput = pd.read_excel(input_filename, design_inp_sheet, engine="openpyxl")
     designinput.dropna(axis=0, how="all", inplace=True)
+
+    required_columns = {"sensname", "type", "param_name"}
+    missing_columns = required_columns - set(designinput.columns)
+
+    if missing_columns:
+        raise ValueError(f"The sheet {design_inp_sheet} is missing the following required column(s): {list(missing_columns)}")
+
+    # First column is used as columns in the dataframe, hence both checks.
+    if len(designinput.columns) == 0 and designinput.reset_index().empty:
+        raise ValueError(f"Sheet '{design_inp_sheet}' is empty")
+
     designinput = designinput.loc[
         :, ~designinput.columns.astype(str).str.contains("^Unnamed")
     ]
@@ -298,6 +308,7 @@ def _excel2dict_onebyone(input_filename, sheetnames=None):
     )
 
     _check_designinput(designinput)
+    print(designinput)
 
     designinput["sensname"].fillna(method="ffill", inplace=True)
 
@@ -545,6 +556,12 @@ def _read_scenario_sensitivity(sensgroup):
     casedict1 = OrderedDict()
     casedict2 = OrderedDict()
 
+    required_columns = {"senscase1", "value1", "senscase2", "value2"}
+    missing_columns = required_columns - set(sensgroup.columns)
+
+    if missing_columns:
+        raise ValueError(f"Scenario sensitivity is missing the following required column(s): {list(missing_columns)}")
+
     if not _has_value(sensgroup["senscase1"].iloc[0]):
         raise ValueError(
             "Sensitivity {} has been input "
@@ -561,7 +578,7 @@ def _read_scenario_sensitivity(sensgroup):
             )
         if not _has_value(row.value1):
             raise ValueError(
-                "Parameter {} har been input "
+                "Parameter {} has been input "
                 'as type "scenario" but with empty '
                 "value in value1 column ".format(row.param_name)
             )

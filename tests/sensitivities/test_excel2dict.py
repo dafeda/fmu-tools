@@ -1,5 +1,6 @@
 """Testing excel2dict"""
 import os
+import re
 
 import numpy as np
 import pandas as pd
@@ -110,7 +111,7 @@ def test_duplicate_sensname_exception(tmpdir):
     writer.close()
 
     with pytest.raises(
-        ValueError, match="Two sensitivities can not share the same sensname"
+        ValueError, match=re.escape("The 'sensname' column in the 'designinput' sheet must contain unique values. Repeated value(s) found: ['rms_seed']")
     ):
         excel2dict_design("designinput3.xlsx")
 
