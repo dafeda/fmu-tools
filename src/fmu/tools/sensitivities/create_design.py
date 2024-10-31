@@ -323,8 +323,7 @@ class DesignMatrix:
                                     len(self.backgroundvalues), sensname, key
                                 )
                             )
-                existing_values = result_values.copy()
-                result_values = pd.concat([existing_values, temp_df])
+                result_values = pd.concat([result_values, temp_df])
 
             result_values = result_values.drop(["index"], axis=1)
             self.designvalues = result_values
