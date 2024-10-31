@@ -307,11 +307,8 @@ class DesignMatrix:
 
             if len(temp_df) > len(self.backgroundvalues):
                 raise ValueError(
-                    "Provided number of background values "
-                    "{} is smaller than number"
-                    " of realisations for sensitivity {}".format(
-                        len(self.backgroundvalues), sensname
-                    )
+                    f"Provided number of background values {len(self.backgroundvalues)} "
+                    f"is smaller than number of realisations for sensitivity {sensname}"
                 )
 
             for key in self.backgroundvalues:
