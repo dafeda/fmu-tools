@@ -304,17 +304,19 @@ class DesignMatrix:
             temp_df = case.reset_index()
             temp_df.fillna(self.backgroundvalues, inplace=True)
             temp_df.set_index("index")
+
+            if len(temp_df) > len(self.backgroundvalues):
+                raise ValueError(
+                    "Provided number of background values "
+                    "{} is smaller than number"
+                    " of realisations for sensitivity {}".format(
+                        len(self.backgroundvalues), sensname
+                    )
+                )
+
             for key in self.backgroundvalues:
                 if key not in case:
                     temp_df[key] = self.backgroundvalues[key]
-                    if len(temp_df) > len(self.backgroundvalues):
-                        raise ValueError(
-                            "Provided number of background values "
-                            "{} is smaller than number"
-                            " of realisations for sensitivity {}".format(
-                                len(self.backgroundvalues), sensname
-                            )
-                        )
                 else:
                     if len(temp_df) > len(self.backgroundvalues):
                         print(
