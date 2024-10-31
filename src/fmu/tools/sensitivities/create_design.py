@@ -294,39 +294,42 @@ class DesignMatrix:
         """Substituting NaNs with background values if existing.
         background values not in design are added as separate colums
         """
-        if self.backgroundvalues is not None:
-            grouped = self.designvalues.groupby(["SENSNAME", "SENSCASE"], sort=False)
-            result_values = pd.DataFrame()
-            for sensname, case in grouped:
-                temp_df = case.reset_index()
-                temp_df.fillna(self.backgroundvalues, inplace=True)
-                temp_df.set_index("index")
-                for key in self.backgroundvalues:
-                    if key not in case:
-                        temp_df[key] = self.backgroundvalues[key]
-                        if len(temp_df) > len(self.backgroundvalues):
-                            raise ValueError(
-                                "Provided number of background values "
-                                "{} is smaller than number"
-                                " of realisations for sensitivity {}".format(
-                                    len(self.backgroundvalues), sensname
-                                )
-                            )
-                    else:
-                        if len(temp_df) > len(self.backgroundvalues):
-                            print(
-                                "Provided number of background values "
-                                "({}) is smaller than number"
-                                " of realisations for sensitivity {}"
-                                " and parameter {}. "
-                                "Will be filled with default values.".format(
-                                    len(self.backgroundvalues), sensname, key
-                                )
-                            )
-                result_values = pd.concat([result_values, temp_df])
 
-            result_values = result_values.drop(["index"], axis=1)
-            self.designvalues = result_values
+        if self.backgroundvalues is None:
+            return
+
+        grouped = self.designvalues.groupby(["SENSNAME", "SENSCASE"], sort=False)
+        result_values = pd.DataFrame()
+        for sensname, case in grouped:
+            temp_df = case.reset_index()
+            temp_df.fillna(self.backgroundvalues, inplace=True)
+            temp_df.set_index("index")
+            for key in self.backgroundvalues:
+                if key not in case:
+                    temp_df[key] = self.backgroundvalues[key]
+                    if len(temp_df) > len(self.backgroundvalues):
+                        raise ValueError(
+                            "Provided number of background values "
+                            "{} is smaller than number"
+                            " of realisations for sensitivity {}".format(
+                                len(self.backgroundvalues), sensname
+                            )
+                        )
+                else:
+                    if len(temp_df) > len(self.backgroundvalues):
+                        print(
+                            "Provided number of background values "
+                            "({}) is smaller than number"
+                            " of realisations for sensitivity {}"
+                            " and parameter {}. "
+                            "Will be filled with default values.".format(
+                                len(self.backgroundvalues), sensname, key
+                            )
+                        )
+            result_values = pd.concat([result_values, temp_df])
+
+        result_values = result_values.drop(["index"], axis=1)
+        self.designvalues = result_values
 
     def _fill_with_defaultvalues(self):
         """Filling NaNs with default values"""
