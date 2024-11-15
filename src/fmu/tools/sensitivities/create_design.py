@@ -87,11 +87,15 @@ def iman_conover(X, C, rng):
     S = P @ np.linalg.inv(Q)  # S = PQ^(-1)
     R_star = R @ S.T
 
-    # Reorder X columns to match R_star ranks
-    result = np.zeros_like(X)
+    # Reorer each column in X to match the order the same column in R_star.
+    # >>> R_star = np.array([[0.1, 0.9, 0.3, 0.6], [0.8, 0.6, 0.1, 0.3]]).T
+    # >>> X = np.array([[1, 2, 3, 4], [1, 2, 3, 4]]).T
+    # >>> result == array([[1, 3, 4, 2], [3, 4, 2, 1]])
+
+    result = np.empty_like(X)
     for k in range(K):
-        ranks = rankdata(R_star[:, k]).astype(int) - 1
-        result[:, k] = np.sort(X[:, k])[ranks]
+        sorted_idx = np.argsort(R_star[:, k])
+        result[:, k] = X[sorted_idx, k]
 
     return result
 
