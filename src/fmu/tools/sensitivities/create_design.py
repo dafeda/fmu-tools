@@ -87,7 +87,7 @@ def iman_conover(X, C, rng):
     S = P @ np.linalg.inv(Q)  # S = PQ^(-1)
     R_star = R @ S.T
 
-    # Reorer each column in X to match the order the same column in R_star.
+    # Reorer each column in X to match the order of the same column in R_star.
     # >>> R_star = np.array([[0.1, 0.9, 0.3, 0.6], [0.8, 0.6, 0.1, 0.3]]).T
     # >>> X = np.array([[1, 2, 3, 4], [1, 2, 3, 4]]).T
     # >>> result == array([[1, 3, 4, 2], [3, 4, 2, 1]])
