@@ -15,6 +15,40 @@ import fmu.tools
 from fmu.tools.sensitivities import design_distributions as design_dist
 
 
+def get_correlation_data(inputdict: Dict) -> Dict[str, pd.DataFrame]:
+    """Get correlation matrices for monte carlo sensitivities.
+    Args:
+        inputdict: Input dictionary containing correlation info
+    Returns:
+        Dict mapping correlation sheet names to correlation DataFrames
+    """
+    correlation_data = {}
+
+    for sensitivity in inputdict["sensitivities"].values():
+        if sensitivity.get("correlations"):
+            filename = sensitivity["correlations"]["inputfile"]
+            sheets = sensitivity["correlations"]["sheetnames"]
+
+            for sheet in sheets:
+                if sheet not in correlation_data:
+                    correlations = pd.read_excel(
+                        filename, sheet, index_col=0, engine="openpyxl"
+                    )
+                    correlations.dropna(axis=0, how="all", inplace=True)
+                    correlations = correlations.loc[
+                        :, ~correlations.columns.str.contains("^Unnamed")
+                    ]
+
+                    # Fill upper triangular
+                    values = correlations.values
+                    i_upper = np.triu_indices(len(values), 1)
+                    values[i_upper] = values.T[i_upper]
+                    correlations.values[:] = values
+
+                    correlation_data[sheet] = correlations
+    return correlation_data
+
+
 class DesignMatrix:
     """Class for design matrix in FMU. Can contain a onebyone design
     or a full montecarlo design.
@@ -121,11 +155,12 @@ class DesignMatrix:
                     self._add_sensitivity(sensitivity)
                 elif sens["senstype"] == "dist":
                     sensitivity = MonteCarloSensitivity(key)
+                    correlation_data = get_correlation_data(inputdict)
                     sensitivity.generate(
                         range(counter, counter + numreal),
                         sens["parameters"],
                         self.seedvalues,
-                        sens["correlations"],
+                        correlation_data,
                         rng=rng,
                     )
                     counter += numreal
@@ -723,7 +758,7 @@ class MonteCarloSensitivity:
                         normalscoremeans, cov_matrix, size=numreals
                     )
                     normalscoresamples_df = pd.DataFrame(
-                        data=normalscoresamples, columns=correlation_matrix
+                        data=normalscoresamples, columns=correlation_matrix.columns
                     )
                     for key in param_dict:
                         dist_name = param_dict[key][0].lower()

@@ -7,7 +7,6 @@ from math import exp
 
 import numpy as np
 import numpy.linalg as la
-import pandas as pd
 import scipy.stats
 
 
@@ -496,40 +495,40 @@ def is_number(teststring):
         return False
 
 
-def read_correlations(corr_dict, corrsheet):
-    """Reading correlation info for a
-    monte carlo sensitivity
+# def read_correlations(corr_dict, corrsheet):
+#     """Reading correlation info for a
+#     monte carlo sensitivity
 
-    Args:
-        corr_dict (OrderedDict): correlation info
+#     Args:
+#         corr_dict (OrderedDict): correlation info
 
-    Returns:
-        pd.DataFrame: Dataframe with correlations, parameter names
-            as column and index
-    """
-    correlations = None
-    filename = corr_dict["inputfile"]
-    if corrsheet in corr_dict["sheetnames"]:
-        if str(filename).endswith(".xlsx"):
-            correlations = pd.read_excel(
-                filename, corrsheet, index_col=0, engine="openpyxl"
-            )
-            correlations.dropna(axis=0, how="all", inplace=True)
-            correlations = correlations.loc[
-                :, ~correlations.columns.str.contains("^Unnamed")
-            ]
-        else:
-            raise ValueError(
-                "Correlation matrix filename should be on "
-                "Excel format and end with .xlsx "
-            )
-    else:
-        raise ValueError(
-            "Corr_sheet {} specified but cannot be "
-            "found in list of sheetnames".format(corrsheet)
-        )
+#     Returns:
+#         pd.DataFrame: Dataframe with correlations, parameter names
+#             as column and index
+#     """
+#     correlations = None
+#     filename = corr_dict["inputfile"]
+#     if corrsheet in corr_dict["sheetnames"]:
+#         if str(filename).endswith(".xlsx"):
+#             correlations = pd.read_excel(
+#                 filename, corrsheet, index_col=0, engine="openpyxl"
+#             )
+#             correlations.dropna(axis=0, how="all", inplace=True)
+#             correlations = correlations.loc[
+#                 :, ~correlations.columns.str.contains("^Unnamed")
+#             ]
+#         else:
+#             raise ValueError(
+#                 "Correlation matrix filename should be on "
+#                 "Excel format and end with .xlsx "
+#             )
+#     else:
+#         raise ValueError(
+#             "Corr_sheet {} specified but cannot be "
+#             "found in list of sheetnames".format(corrsheet)
+#         )
 
-    return correlations
+#     return correlations
 
 
 def make_covariance_matrix(df_correlations, stddevs=None):
