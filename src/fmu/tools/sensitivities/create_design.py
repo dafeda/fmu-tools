@@ -5,8 +5,10 @@ and DESIGN_KW in FMU/ERT.
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 import fmu.tools
@@ -658,7 +660,14 @@ class MonteCarloSensitivity:
         self.sensname = sensname
         self.sensvalues = None
 
-    def generate(self, realnums, parameters, seedvalues, corrdict, rng):
+    def generate(
+        self,
+        realnums,
+        parameters,
+        seedvalues,
+        correlation_data: Dict[str, npt.NDArray[np.float64]],
+        rng,
+    ):
         """Generates parameter values by drawing from
         defined distributions.
 
@@ -667,11 +676,11 @@ class MonteCarloSensitivity:
             parameters (OrderedDict):
                 dictionary of parameters and distributions
             seeds (str): default or None
-            corrdict(OrderedDict): correlation info
+            correlation_data
         """
         self.sensvalues = pd.DataFrame(columns=parameters.keys(), index=realnums)
         numreals = len(realnums)
-        if corrdict is None:
+        if correlation_data is None:
             for key in parameters:
                 dist_name = parameters[key][0].lower()
                 dist_params = parameters[key][1]
@@ -707,20 +716,19 @@ class MonteCarloSensitivity:
                 if correl != "nocorr":
                     if len(group) == 1:
                         _printwarning(correl)
-                    df_correlations = design_dist.read_correlations(corrdict, correl)
-                    multivariate_parameters = df_correlations.index.values
-                    cov_matrix = design_dist.make_covariance_matrix(df_correlations)
-                    normalscoremeans = len(multivariate_parameters) * [0]
+                    correlation_matrix = correlation_data.get(correl)
+                    cov_matrix = design_dist.make_covariance_matrix(correlation_matrix)
+                    normalscoremeans = len(correlation_matrix) * [0]
                     normalscoresamples = rng.multivariate_normal(
                         normalscoremeans, cov_matrix, size=numreals
                     )
                     normalscoresamples_df = pd.DataFrame(
-                        data=normalscoresamples, columns=multivariate_parameters
+                        data=normalscoresamples, columns=correlation_matrix
                     )
                     for key in param_dict:
                         dist_name = param_dict[key][0].lower()
                         dist_parameters = param_dict[key][1]
-                        if key in multivariate_parameters:
+                        if key in correlation_matrix:
                             try:
                                 self.sensvalues[key] = design_dist.draw_values(
                                     dist_name,
